@@ -1,1 +1,47 @@
-return {type: "none" }
+<script>
+
+  <!--
+  #* Copyright (c) 2013 Deputy.com. All rights reserved.
+  #*
+  #* Redistribution and use in source and binary forms, with or without
+  #* modification, is NOT permitted
+  #*
+  #* THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS
+  #* IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO,
+  #* THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR
+  #* PURPOSE ARE DISCLAIMED.  IN NO EVENT SHALL THE COPYRIGHT OWNER OR
+  #* CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL,
+  #* EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO,
+  #* PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR
+  #* PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF
+  #* LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING
+  #* NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
+  #* SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.  
+  -->
+  <!--
+  
+       Author  : Deputy DEV
+       
+       Date    : JUN 2013
+    
+       Purpose : Match whatever hours are over the rostered shifts
+  -->
+  <!--
+  #   
+  #   Pay for only the first defined hours worked for the given timesheets day
+  #
+  #     Parameters:
+  #            shift     = A Roster/Timesheet object (note that they have almost the same crucial columns StartTime/EndTime
+  #            payrule   = The pay condition which is executing this script
+  #            starttime = Start Timestamp we are trying to match with (irrespective of the starttime of the shift object)
+  #            endtime   = End Timestamp we are trying to match with (irrespective of the endtime of the shift object)
+  #
+  -->
+    <assign var="_dpObj" index="type">none</assign>
+<assign var="_dpObj" index="starttime"><atom var="starttime"/></assign>
+<assign var="_dpObj" index="endtime"><atom var="endtime"/></assign>
+  <assign var="_dpExit"><atom var="_dpObj"/></assign>
+  <exit var="_dpExit"/>
+
+
+</script>
