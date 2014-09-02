@@ -1,0 +1,270 @@
+<script>
+
+  <!--
+  #
+  #     Deputy script to calculate the penalty hours if worked over 5 hours
+  #   
+  #     Parameters:
+  #            shift     = A Roster/Timesheet object (note that they have almost the same crucial columns StartTime/EndTime
+  #            payrule   = The pay condition which is executing this script
+  #            starttime = Start Timestamp we are trying to match with (irrespective of the starttime of the shift object)
+  #            endtime   = End Timestamp we are trying to match with (irrespective of the endtime of the shift object)
+  #
+  #
+  #     Specs:
+  #     If an employee works over 5 hours and the mealbreak is taken within the first 5 hrs, there is no penalty, but if they 
+  #     take the mealbreak after the 5 hours of work then we pay a penalty rate from 5 hr limit up to the start of the mealbreak 
+  #     timestamp. Otherwise if the employee works over 5hrs and if no mealbreaks are taken then we calculate from the 5hr limit
+  #     to the end of the shift.
+  #
+  -->
+      <def_procedure procedureName="getMiddleOfShift">
+        
+    <assign var="objSplitShiftArray"></assign>
+        
+    <assign var="uxMiddleTimestamp"><atom>0</atom></assign>
+        
+    <assign var="strMealbreak"><atom var="objShift" index="Mealbreak"/></assign>
+        
+    <dateprint  format="H" input="$strMealbreak"  assign="intMealbreakHours"/>
+        
+    <dateprint  format="i" input="$strMealbreak"  assign="intMealbreakMinutes"/>
+        <assign var="_dpOpFirst2"><atom var="intMealbreakHours"/></assign>
+    <assign var="_dpOpSecond2"><atom>60</atom></assign>
+    <math  op="*" arg1="$_dpOpFirst2" arg2="$_dpOpSecond2"  assign="_dpOpFirst"/>
+    <assign var="_dpOpSecond"><atom var="intMealbreakMinutes"/></assign>
+    <math  op="+" arg1="$_dpOpFirst" arg2="$_dpOpSecond"  assign="intMealbreak"/>
+    <assign var="_dpOpFirst3"><atom var="intMealbreak"/></assign>
+      <assign var="_dpOpSecond3"><atom>0</atom></assign>
+      <if>
+      <condition>
+      <compare  function="eq" value1="$_dpOpFirst3"  value2="$_dpOpSecond3" />
+      </condition>
+      <perform>
+
+            
+      <assign var="_dpExit"><atom var="uxMiddleTimestamp"/></assign>
+      <exit var="_dpExit"/>
+
+
+      </perform>
+
+      </if>
+        <assign var="_dpOpFirst4"><atom var="objShift" index="TotalTime"/></assign>
+    <assign var="_dpOpSecond4"><atom>2</atom></assign>
+<math  op="/" arg1="$_dpOpFirst4" arg2="$_dpOpSecond4"  assign="_dpParam"/>
+    <math  op="round" arg1="$_dpParam" arg2="2"  assign="fltHalfHours"/>
+        <assign var="_dpOpFirst5"><atom var="fltHalfHours"/></assign>
+    <assign var="_dpOpSecond5"><atom>60</atom></assign>
+<math  op="*" arg1="$_dpOpFirst5" arg2="$_dpOpSecond5"  assign="_dpParam2"/>
+    <math  op="round" arg1="$_dpParam2"  assign="intFirstHalfMinutes"/>
+        <assign var="_dpOpFirst6"><atom var="intFirstHalfMinutes"/></assign>
+    <assign var="_dpOpSecond6"><atom>60</atom></assign>
+    <math  op="*" arg1="$_dpOpFirst6" arg2="$_dpOpSecond6"  assign="intFirstHalfSeconds"/>
+        <assign var="_dpOpFirst7">first half of shift : </assign>
+    <assign var="_dpOpSecond7"><atom var="intFirstHalfSeconds"/></assign>
+<math  op="&amp;" arg1="$_dpOpFirst7" arg2="$_dpOpSecond7"  assign="_dpParam3"/>
+    <log  message="$_dpParam3" />
+        <assign var="_dpOpFirst8"><atom var="objShift" index="StartTime"/></assign>
+    <assign var="_dpOpSecond8"><atom var="intFirstHalfSeconds"/></assign>
+    <math  op="+" arg1="$_dpOpFirst8" arg2="$_dpOpSecond8"  assign="uxMiddleTimestamp"/>
+        
+    <assign var="_dpExit2"><atom var="uxMiddleTimestamp"/></assign>
+    <exit var="_dpExit2"/>
+
+        </def_procedure>
+    <assign var="_dpObj" index="type">none</assign>
+<assign var="_dpObj" index="starttime"><atom var="starttime"/></assign>
+<assign var="_dpObj" index="endtime"><atom var="endtime"/></assign>
+  <assign var="noMatch"><atom var="_dpObj"/></assign>
+    <assign var="_dpObj2" index="type">inside</assign>
+<assign var="_dpObj2" index="starttime"><atom var="starttime"/></assign>
+<assign var="_dpObj2" index="endtime"><atom var="endtime"/></assign>
+  <assign var="fullMatch"><atom var="_dpObj2"/></assign>
+    
+  <assign var="arrMealbreaks"></assign>
+    
+  <assign var="unix_earliest_mealbreak_start"><atom>0</atom></assign>
+    
+  <assign var="unix_combined_mealbreaks_end"><atom>0</atom></assign>
+  <assign var="_dpOpFirst"><atom var="shift" index="TotalTime"/></assign>
+    <assign var="_dpOpSecond"><atom>5</atom></assign>
+    <if>
+    <condition>
+    <compare  function="le" value1="$_dpOpFirst"  value2="$_dpOpSecond" />
+    </condition>
+    <perform>
+
+        
+    <assign var="_dpExit"><atom var="noMatch"/></assign>
+    <exit var="_dpExit"/>
+
+
+    </perform>
+
+    </if>
+    <assign var="_dpOpFirst2"><atom var="shift" index="StartTime"/></assign>
+  <assign var="_dpOpFirst3"><atom>5</atom></assign>
+  <assign var="_dpOpSecond3"><atom>3600</atom></assign>
+  <math  op="*" arg1="$_dpOpFirst3" arg2="$_dpOpSecond3"  assign="_dpOpSecond2"/>
+  <math  op="+" arg1="$_dpOpFirst2" arg2="$_dpOpSecond2"  assign="limit"/>
+    <assign var="_dpOpFirst4">5hr limit </assign>
+  <assign var="_dpOpSecond4"><atom var="limit"/></assign>
+<math  op="&amp;" arg1="$_dpOpFirst4" arg2="$_dpOpSecond4"  assign="_dpParam"/>
+  <log  message="$_dpParam" />
+    
+  <assign var="total_mb_hours"><atom var="shift" index="Mealbreak"/></assign>
+    
+  <dateprint  format="H" input="$total_mb_hours"  assign="intMealbreakHours"/>
+    
+  <dateprint  format="i" input="$total_mb_hours"  assign="intMealbreakMinutes"/>
+    <assign var="_dpOpFirst6"><atom var="intMealbreakHours"/></assign>
+  <assign var="_dpOpSecond6"><atom>60</atom></assign>
+  <math  op="*" arg1="$_dpOpFirst6" arg2="$_dpOpSecond6"  assign="_dpOpFirst5"/>
+  <assign var="_dpOpSecond5"><atom var="intMealbreakMinutes"/></assign>
+  <math  op="+" arg1="$_dpOpFirst5" arg2="$_dpOpSecond5"  assign="intMealbreakMinutes"/>
+    <assign var="_dpOpFirst7"><atom var="intMealbreakMinutes"/></assign>
+  <assign var="_dpOpSecond7"><atom>60</atom></assign>
+  <math  op="/" arg1="$_dpOpFirst7" arg2="$_dpOpSecond7"  assign="intMealbreakHours"/>
+  <assign var="_dpOpFirst8"><atom var="intMealbreakHours"/></assign>
+    <assign var="_dpOpSecond8"><atom>0</atom></assign>
+    <if>
+    <condition>
+    <compare  function="eq" value1="$_dpOpFirst8"  value2="$_dpOpSecond8" />
+    </condition>
+    <perform>
+
+        
+    <assign var="unix_earliest_mealbreak_start"><atom var="shift" index="EndTime"/></assign>
+
+    </perform>
+    <else>
+
+        
+    <assign var="arrMealbreaks"><atom var="shift" index="MealbreakSlots"/></assign>
+    <length  var="arrMealbreaks"  assign="_dpOpFirst9"/>
+      <assign var="_dpOpSecond9"><atom>0</atom></assign>
+      <if>
+      <condition>
+      <compare  function="gt" value1="$_dpOpFirst9"  value2="$_dpOpSecond9" />
+      </condition>
+      <perform>
+
+            
+      <assign var="earliest_mb"><atom>0</atom></assign>
+            
+      <log  message="all mb slots: " obj="$arrMealbreaks" />
+      <loop var="arrMealbreaks">
+      <perform>
+      <assign var="strMB"><atom var="this"/></assign>
+                      
+        <assign var="break_timestamp"><atom var="index"/></assign>
+                <assign var="_dpOpFirst10">looping mb slots idx=</assign>
+        <assign var="_dpOpFirst11"><atom var="break_timestamp"/></assign>
+          <assign var="_dpOpFirst12">, val=</assign>
+          <assign var="_dpOpSecond12"><atom var="strMB"/></assign>
+          <math  op="&amp;" arg1="$_dpOpFirst12" arg2="$_dpOpSecond12"  assign="_dpOpSecond11"/>
+          <math  op="&amp;" arg1="$_dpOpFirst11" arg2="$_dpOpSecond11"  assign="_dpOpSecond10"/>
+<math  op="&amp;" arg1="$_dpOpFirst10" arg2="$_dpOpSecond10"  assign="_dpParam2"/>
+        <log  message="$_dpParam2" />
+        <assign var="_dpOpFirst13"><atom var="earliest_mb"/></assign>
+          <assign var="_dpOpSecond13"><atom>0</atom></assign>
+          <if>
+          <condition>
+          <compare  function="eq" value1="$_dpOpFirst13"  value2="$_dpOpSecond13" />
+          </condition>
+          <perform>
+
+                    
+          <assign var="earliest_mb"><atom var="break_timestamp"/></assign>
+
+          </perform>
+          <else>
+
+          <assign var="_dpOpFirst15"><atom var="strMB"/></assign>
+          <assign var="_dpOpSecond15">OUT</assign>
+          <compare  function="eq" value1="$_dpOpFirst15"  value2="$_dpOpSecond15"  assign="_dpOpFirst14"/>
+            <assign var="_dpOpFirst16"><atom var="break_timestamp"/></assign>
+          <assign var="_dpOpSecond16"><atom var="earliest_mb"/></assign>
+          <compare  function="lt" value1="$_dpOpFirst16"  value2="$_dpOpSecond16"  assign="_dpOpSecond14"/>
+            <if>
+            <condition>
+            <compare  function="and" value1="$_dpOpFirst14"  value2="$_dpOpSecond14" />
+            </condition>
+            <perform>
+
+                        
+            <assign var="earliest_mb"><atom var="break_timestamp"/></assign>
+
+            </perform>
+
+            </if>
+          </else>
+</if>
+      </perform>
+      </loop>
+            
+      <assign var="unix_earliest_mealbreak_start"><atom var="earliest_mb"/></assign>
+
+      </perform>
+      <else>
+
+            
+      <call_procedure procedureName="getMiddleOfShift" objShift="$shift"  assign="unix_earliest_mealbreak_start"/>
+      </else>
+</if>
+        <assign var="_dpOpFirst17"><atom var="unix_earliest_mealbreak_start"/></assign>
+    <assign var="_dpOpFirst18"><atom var="intMealbreakHours"/></assign>
+    <assign var="_dpOpSecond18"><atom>3600</atom></assign>
+    <math  op="*" arg1="$_dpOpFirst18" arg2="$_dpOpSecond18"  assign="_dpOpSecond17"/>
+    <math  op="+" arg1="$_dpOpFirst17" arg2="$_dpOpSecond17"  assign="unix_combined_mealbreaks_end"/>
+        <assign var="_dpOpFirst19">get earliest mb: </assign>
+    <assign var="_dpOpSecond19"><atom var="unix_earliest_mealbreak_start"/></assign>
+<math  op="&amp;" arg1="$_dpOpFirst19" arg2="$_dpOpSecond19"  assign="_dpParam3"/>
+    <log  message="$_dpParam3" />
+        <assign var="_dpOpFirst20">get mb end: </assign>
+    <assign var="_dpOpSecond20"><atom var="unix_combined_mealbreaks_end"/></assign>
+<math  op="&amp;" arg1="$_dpOpFirst20" arg2="$_dpOpSecond20"  assign="_dpParam4"/>
+    <log  message="$_dpParam4" />
+    </else>
+</if>
+  <assign var="_dpOpFirst21"><atom var="unix_earliest_mealbreak_start"/></assign>
+    <assign var="_dpOpSecond21"><atom var="limit"/></assign>
+    <if>
+    <condition>
+    <compare  function="le" value1="$_dpOpFirst21"  value2="$_dpOpSecond21" />
+    </condition>
+    <perform>
+
+        
+    <assign var="_dpExit2"><atom var="noMatch"/></assign>
+    <exit var="_dpExit2"/>
+
+
+    </perform>
+
+    </if>
+  <assign var="_dpOpFirst22"><atom var="shift" index="StartTime"/></assign>
+    <assign var="_dpOpSecond22"><atom var="starttime"/></assign>
+    <if>
+    <condition>
+    <compare  function="eq" value1="$_dpOpFirst22"  value2="$_dpOpSecond22" />
+    </condition>
+    <perform>
+
+        <assign var="_dpObj12" index="type">full</assign>
+<assign var="_dpObj12" index="starttime"><atom var="limit"/></assign>
+<assign var="_dpObj12" index="endtime"><atom var="unix_earliest_mealbreak_start"/></assign>
+    <assign var="_dpExit3"><atom var="_dpObj12"/></assign>
+    <exit var="_dpExit3"/>
+
+
+    </perform>
+
+    </if>
+    
+  <assign var="_dpExit4"><atom var="noMatch"/></assign>
+  <exit var="_dpExit4"/>
+
+
+</script>
