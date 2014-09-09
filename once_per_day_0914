@@ -1,0 +1,147 @@
+<script>
+
+  <!--
+  #* Copyright (c) 2011 Deputy.com. All rights reserved.
+  #*
+  #* Redistribution and use in source and binary forms, with or without
+  #* modification, is NOT permitted
+  #*
+  #* THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS
+  #* IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO,
+  #* THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR
+  #* PURPOSE ARE DISCLAIMED.  IN NO EVENT SHALL THE COPYRIGHT OWNER OR
+  #* CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL,
+  #* EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO,
+  #* PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR
+  #* PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF
+  #* LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING
+  #* NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
+  #* SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.  
+  -->
+  <!--
+  
+       Author  : Deputy DEV
+       
+       Date    : JUN 2012
+    
+       Purpose : Match the given time with specified schedule
+                 Round up OR down the matched set of hours
+                 It SHOULD only be applied to loadings!
+  -->
+  <!--
+  #   
+  #   Pay for only the first defined hours worked for the given timesheets day
+  #
+  #     Parameters:
+  #            shift     = A Roster/Timesheet object (note that they have almost the same crucial columns StartTime/EndTime
+  #            payrule   = The pay condition which is executing this script
+  #            starttime = Start Timestamp we are trying to match with (irrespective of the starttime of the shift object)
+  #            endtime   = End Timestamp we are trying to match with (irrespective of the endtime of the shift object)
+  #
+  -->
+    
+  <assign var="firstHours"><atom>2</atom></assign>
+    
+  <assign var="secondHours"><atom>2</atom></assign>
+    
+  <assign var="givenEmployee"><atom var="shift" index="Employee"/></assign>
+    <assign var="_dpParam"><atom var="shift" index="Date"/></assign>
+  <dateprint  format="Y-m-d" input="$_dpParam"  assign="givenTSDate"/>
+    <assign var="_dpParam2"><atom var="shift" index="Date"/></assign>
+  <dateprint  format="N" input="$_dpParam2"  assign="givenTSDay"/>
+  
+    <if>
+    <condition>
+      
+  <index_exists  var="shift" index="PayStaged" />
+    </condition>
+    <perform>
+
+    <db_fetch system="Timesheet" assign="arrTimesheets">
+      <db_condition>
+        <db_compare column="Employee"  function="eq"><atom var="givenEmployee" /></db_compare>
+        <db_compare column="Date"      function="eq"><atom var="givenTSDate" /></db_compare>
+        <db_compare column="Discarded" function="ns">
+          <atom>0</atom>
+        </db_compare>
+      </db_condition>
+      <db_sort>
+        <db_sort_column order="asc">StartTime</db_sort_column>
+      </db_sort>
+   </db_fetch>
+
+    </perform>
+    <else>
+
+    <db_fetch system="Roster" assign="arrTimesheets">
+      <db_condition>
+        <db_compare column="Employee"  function="eq"><atom var="givenEmployee" /></db_compare>
+        <db_compare column="Date"      function="eq"><atom var="givenTSDate" /></db_compare>
+      </db_condition>
+      <db_sort>
+        <db_sort_column order="asc">StartTime</db_sort_column>
+      </db_sort>
+   </db_fetch>
+    </else>
+</if>
+    <assign var="_dpObj4" index="type">full</assign>
+<assign var="_dpObj4" index="starttime"><atom var="starttime"/></assign>
+<assign var="_dpObj4" index="endtime"><atom var="endtime"/></assign>
+  <assign var="retFull"><atom var="_dpObj4"/></assign>
+  
+    <if>
+    <condition>
+    <compare  function="nt"><atom var="arrTimesheets"/></compare>
+    </condition>
+    <perform>
+
+        
+    <assign var="_dpExit"><atom var="retFull"/></assign>
+    <exit var="_dpExit"/>
+
+
+    </perform>
+
+    </if>
+  <length  var="arrTimesheets"  assign="_dpOpFirst"/>
+    <assign var="_dpOpSecond"><atom>0</atom></assign>
+    <if>
+    <condition>
+    <compare  function="eq" value1="$_dpOpFirst"  value2="$_dpOpSecond" />
+    </condition>
+    <perform>
+
+        
+    <assign var="_dpExit2"><atom var="retFull"/></assign>
+    <exit var="_dpExit2"/>
+
+
+    </perform>
+
+    </if>
+    <assign var="_dpIndex">0</assign>
+  <assign var="firstShift"><atom var="arrTimesheets" index="$_dpIndex"/></assign>
+  <assign var="_dpOpFirst2"><atom var="firstShift" index="Id"/></assign>
+    <assign var="_dpOpSecond2"><atom var="shift" index="Id"/></assign>
+    <if>
+    <condition>
+    <compare  function="eq" value1="$_dpOpFirst2"  value2="$_dpOpSecond2" />
+    </condition>
+    <perform>
+
+        
+    <assign var="_dpExit3"><atom var="retFull"/></assign>
+    <exit var="_dpExit3"/>
+
+
+    </perform>
+
+    </if>
+    <assign var="_dpObj6" index="type">none</assign>
+<assign var="_dpObj6" index="starttime"><atom var="starttime"/></assign>
+<assign var="_dpObj6" index="endtime"><atom var="endtime"/></assign>
+  <assign var="_dpExit4"><atom var="_dpObj6"/></assign>
+  <exit var="_dpExit4"/>
+
+
+</script>
