@@ -1,0 +1,197 @@
+<script>
+
+  <!--
+  #* Copyright (c) 2013 Deputy.com. All rights reserved.
+  #*
+  #* Redistribution and use in source and binary forms, with or without
+  #* modification, is NOT permitted
+  #*
+  #* THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS
+  #* IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO,
+  #* THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR
+  #* PURPOSE ARE DISCLAIMED.  IN NO EVENT SHALL THE COPYRIGHT OWNER OR
+  #* CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL,
+  #* EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO,
+  #* PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR
+  #* PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF
+  #* LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING
+  #* NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
+  #* SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.  
+  -->
+  <!--
+       Author  : Deputy DEV
+       
+       Date    : SEP 2013
+    
+       Purpose : 24.2 Split shift allowance. Full-time and part-time employees who have a broken work day will receive an additional allowance of 0.5% of the weekly standard rate for each separate work period of two hours or more.
+       
+       Example : The employee works from 10am to 2 pm. He then signs off. He comes back at 5 pm and works til 10 pm. For this he gets paid one, single amount penalty of $7. It is not an hourly rate it is one payment of $7. 
+  
+       Methodology :
+                
+  Deputy's award interpretation framework works by matching pay conditions and their schedules.
+  Whilst schedules are rather rigid in their definition (start time, end time, repeating, days of week etc..),
+  there are numerous cases where it won't cover.
+  Hence these scripts are used to mimic the behaviour of a Deputy scheduler object. 
+    
+  In principle it works by applying a shift's time (or specific start and end times) into a script to check if it matches.
+  Matching returns the following
+               - none   : no matching
+               - inside : the whole shift is inside this shift. So shift's time is used for payment
+               - outside: the shift's time is outside this schedule (but it matches). so whatever time didn't match will be applied to other schedule/scripts
+               - start  : matches the end of the shift (leave unmatched at start), so focus from the starttime returned here
+               - end    : matches the start of the shift (leave unmatched at end), so only focus from the endtime return by this script
+               - full   : Similar to inside. But use the times returned by this script
+                  
+  It will also return a starttime and endtime for which the matching has occurred.
+  Which will be used by the award interpretation framework to find out the left over portions and they are applied back to other pay conditions to see if they will be matched. 
+   
+    
+    
+       Parameters :
+   
+              shift     = A Roster/Timesheet object (note that they have almost the same crucial columns StartTime/EndTime
+              payrule   = The pay condition which is executing this script
+              starttime = Start Timestamp we are trying to match with (irrespective of the starttime of the shift object)
+              endtime   = End Timestamp we are trying to match with (irrespective of the endtime of the shift object)
+    
+    
+       Expected Return:
+               return an array
+                (
+    type      =  (string) none/inside/outside/start/end/full
+                  starttime     =  (int) a timestamp indicating at which point of the entry object's timespan did you match from
+                  endtime       =  (int) a timestamp indicating at which point of the entry object's timespan did you match to
+                )
+  -->
+    
+  <assign var="givenEmployee"><atom var="shift" index="Employee"/></assign>
+    <assign var="_dpParam"><atom var="shift" index="Date"/></assign>
+  <dateprint  format="Y-m-d" input="$_dpParam"  assign="givenTSDate"/>
+    <assign var="_dpParam2"><atom var="shift" index="Date"/></assign>
+  <dateprint  format="N" input="$_dpParam2"  assign="givenTSDay"/>
+  
+    <if>
+    <condition>
+      
+  <index_exists  var="shift" index="PayStaged" />
+    </condition>
+    <perform>
+
+    <db_fetch system="Timesheet" assign="arrTimesheets">
+      <db_condition>
+        <db_compare column="Employee"  function="eq"><atom var="givenEmployee" /></db_compare>
+        <db_compare column="Date"      function="eq"><atom var="givenTSDate" /></db_compare>
+        <db_compare column="Discarded" function="ns">
+          <atom>0</atom>
+        </db_compare>
+      </db_condition>
+      <db_sort>
+        <db_sort_column order="asc">StartTime</db_sort_column>
+      </db_sort>
+   </db_fetch>
+
+    </perform>
+    <else>
+
+    <db_fetch system="Roster" assign="arrTimesheets">
+      <db_condition>
+        <db_compare column="Employee"  function="eq"><atom var="givenEmployee" /></db_compare>
+        <db_compare column="Date"      function="eq"><atom var="givenTSDate" /></db_compare>
+      </db_condition>
+      <db_sort>
+        <db_sort_column order="asc">StartTime</db_sort_column>
+      </db_sort>
+   </db_fetch>
+    </else>
+</if>
+    <assign var="_dpOpFirst"><atom var="starttime"/></assign>
+  <assign var="_dpOpSecond"><atom>3600</atom></assign>
+<assign var="_dpObj4" index="type">full</assign>
+<assign var="_dpObj4" index="starttime"><atom var="starttime"/></assign>
+<assign var="_dpObj4" index="endtime"><math  op="+" arg1="$_dpOpFirst" arg2="$_dpOpSecond" /></assign>
+  <assign var="retMatch"><atom var="_dpObj4"/></assign>
+    <assign var="_dpObj5" index="type">none</assign>
+<assign var="_dpObj5" index="starttime"><atom var="starttime"/></assign>
+<assign var="_dpObj5" index="endtime"><atom var="starttime"/></assign>
+  <assign var="retNone"><atom var="_dpObj5"/></assign>
+  
+    <if>
+    <condition>
+    <compare  function="nt"><atom var="arrTimesheets"/></compare>
+    </condition>
+    <perform>
+
+        
+    <assign var="_dpExit"><atom var="retNone"/></assign>
+    <exit var="_dpExit"/>
+
+
+    </perform>
+
+    </if>
+  <length  var="arrTimesheets"  assign="_dpOpFirst2"/>
+    <assign var="_dpOpSecond2"><atom>0</atom></assign>
+    <if>
+    <condition>
+    <compare  function="eq" value1="$_dpOpFirst2"  value2="$_dpOpSecond2" />
+    </condition>
+    <perform>
+
+        
+    <assign var="_dpExit2"><atom var="retNone"/></assign>
+    <exit var="_dpExit2"/>
+
+
+    </perform>
+
+    </if>
+  <length  var="arrTimesheets"  assign="_dpOpFirst3"/>
+    <assign var="_dpOpSecond3"><atom>1</atom></assign>
+    <if>
+    <condition>
+    <compare  function="eq" value1="$_dpOpFirst3"  value2="$_dpOpSecond3" />
+    </condition>
+    <perform>
+
+        
+    <assign var="_dpExit3"><atom var="retNone"/></assign>
+    <exit var="_dpExit3"/>
+
+
+    </perform>
+
+    </if>
+    <length  var="arrTimesheets"  assign="_dpOpFirst4"/>
+  <assign var="_dpOpSecond4"><atom>1</atom></assign>
+  <math  op="-" arg1="$_dpOpFirst4" arg2="$_dpOpSecond4"  assign="intLen"/>
+    
+  <assign var="lastShift"><atom var="arrTimesheets" index="$intLen"/></assign>
+    <assign var="_dpOpFirst5">arrTimesheets </assign>
+  <assign var="_dpOpFirst6"><atom var="intLen"/></assign>
+    <assign var="_dpOpSecond6"> </assign>
+    <math  op="&amp;" arg1="$_dpOpFirst6" arg2="$_dpOpSecond6"  assign="_dpOpSecond5"/>
+<math  op="&amp;" arg1="$_dpOpFirst5" arg2="$_dpOpSecond5"  assign="_dpParam3"/>
+  <log  message="$_dpParam3" obj="$lastShift" />
+  <assign var="_dpOpFirst7"><atom var="lastShift" index="Id"/></assign>
+    <assign var="_dpOpSecond7"><atom var="shift" index="Id"/></assign>
+    <if>
+    <condition>
+    <compare  function="eq" value1="$_dpOpFirst7"  value2="$_dpOpSecond7" />
+    </condition>
+    <perform>
+
+        
+    <assign var="_dpExit4"><atom var="retMatch"/></assign>
+    <exit var="_dpExit4"/>
+
+
+    </perform>
+
+    </if>
+    
+  <assign var="_dpExit5"><atom var="retNone"/></assign>
+  <exit var="_dpExit5"/>
+
+
+</script>
