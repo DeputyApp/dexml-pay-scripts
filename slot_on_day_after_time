@@ -1,0 +1,429 @@
+<script>
+
+  <!--
+  #
+  #   For given day, after time, duration,slot (passed as parameter) it will only pay that many hours
+  #      Embedded in the third param ->    DAY,TIME_AFTER,HOURS,WHICH_SLOT
+  #      Sample : Sat,1300,3,second|third|first
+  #      Pay Item in Xero  073 SAT Afternoon After 3 Hours [SCRIPT][slot_on_day_after_time][Sat,1300,3,third][]
+  #
+  #     Parameters:
+  #            shift     = A Roster/Timesheet object (note that they have almost the same crucial columns StartTime/EndTime
+  #            payrule   = The pay condition which is executing this script
+  #            starttime = Start Timestamp we are trying to match with (irrespective of the starttime of the shift object)
+  #            endtime   = End Timestamp we are trying to match with (irrespective of the endtime of the shift object)
+  #
+  #
+  -->
+    
+  <assign var="objPayRule"><atom var="payrule"/></assign>
+    <assign var="_dpParam"><atom var="objPayRule" index="DexmlScriptParam"/></assign>
+  <json_decode  input="$_dpParam"  assign="objScriptParam"/>
+    <assign var="_dpIndex">3</assign>
+  <assign var="givenParam"><atom var="objScriptParam" index="$_dpIndex"/></assign>
+    
+  <string  input="," function="explode" arg1="$givenParam"  assign="splits"/>
+    <assign var="_dpIndex2">0</assign>
+  <assign var="strDay"><atom var="splits" index="$_dpIndex2"/></assign>
+    <assign var="_dpIndex3">1</assign>
+  <assign var="strTime"><atom var="splits" index="$_dpIndex3"/></assign>
+    <assign var="_dpIndex4">2</assign>
+  <assign var="intHours"><atom var="splits" index="$_dpIndex4"/></assign>
+    <assign var="_dpIndex5">3</assign>
+  <assign var="strWhichSlot"><atom var="splits" index="$_dpIndex5"/></assign>
+    <assign var="_dpOpFirst">Working with strDay = </assign>
+  <assign var="_dpOpFirst2"><atom var="strDay"/></assign>
+    <assign var="_dpOpFirst3"> , strTime = </assign>
+    <assign var="_dpOpFirst4"><atom var="strTime"/></assign>
+    <assign var="_dpOpFirst5"> intHours = </assign>
+    <assign var="_dpOpFirst6"><atom var="intHours"/></assign>
+    <assign var="_dpOpFirst7"> strWhichSlot= </assign>
+    <assign var="_dpOpSecond7"><atom var="strWhichSlot"/></assign>
+    <math  op="&amp;" arg1="$_dpOpFirst7" arg2="$_dpOpSecond7"  assign="_dpOpSecond6"/>
+    <math  op="&amp;" arg1="$_dpOpFirst6" arg2="$_dpOpSecond6"  assign="_dpOpSecond5"/>
+    <math  op="&amp;" arg1="$_dpOpFirst5" arg2="$_dpOpSecond5"  assign="_dpOpSecond4"/>
+    <math  op="&amp;" arg1="$_dpOpFirst4" arg2="$_dpOpSecond4"  assign="_dpOpSecond3"/>
+    <math  op="&amp;" arg1="$_dpOpFirst3" arg2="$_dpOpSecond3"  assign="_dpOpSecond2"/>
+    <math  op="&amp;" arg1="$_dpOpFirst2" arg2="$_dpOpSecond2"  assign="_dpOpSecond"/>
+<math  op="&amp;" arg1="$_dpOpFirst" arg2="$_dpOpSecond"  assign="_dpParam2"/>
+  <log  message="$_dpParam2" obj="$splits" />
+    
+  <string  input="$strDay" function="trim"  assign="strDay"/>
+    
+  <string  input="$strDay" function="strtolower"  assign="strDay"/>
+    <assign var="_dpObj6" index="type">none</assign>
+<assign var="_dpObj6" index="starttime"><atom var="retStartTime"/></assign>
+<assign var="_dpObj6" index="endtime"><atom var="retEndTime"/></assign>
+  <assign var="strNoMatch"><atom var="_dpObj6"/></assign>
+    <assign var="_dpParam3"><atom var="shift" index="StartTime"/></assign>
+  <dateprint  format="Y-m-d" input="$_dpParam3"  assign="currentShiftDate"/>
+    <assign var="_dpParam4"><atom var="shift" index="StartTime"/></assign>
+  <dateprint  format="D" input="$_dpParam4"  assign="currentShiftDay"/>
+    
+  <string  input="$currentShiftDay" function="strtolower"  assign="currentShiftDay"/>
+    <assign var="_dpParam5"><atom var="shift" index="StartTime"/></assign>
+<assign var="_dpParam6"><atom var="shift" index="OperationalUnit"/></assign>
+  <schedule_overlap  id="3" from="$_dpParam5" operational_unit="$_dpParam6"  assign="isPH"/>
+  <compare  function="nt" assign="_dpOpFirst8"><atom var="isPH"/></compare>
+    <assign var="_dpOpFirst9"><atom var="strDay"/></assign>
+  <assign var="_dpOpSecond9">ph</assign>
+  <compare  function="eq" value1="$_dpOpFirst9"  value2="$_dpOpSecond9"  assign="_dpOpSecond8"/>
+    <if>
+    <condition>
+    <compare  function="and" value1="$_dpOpFirst8"  value2="$_dpOpSecond8" />
+    </condition>
+    <perform>
+
+        
+    <assign var="_dpExit"><atom var="none"/></assign>
+    <exit var="_dpExit"/>
+
+
+    </perform>
+    <else>
+<assign var="_dpOpFirst10"><atom var="strDay"/></assign>
+      <assign var="_dpOpSecond10"><atom var="currentShiftDay"/></assign>
+      <if>
+      <condition>
+      <compare  function="ne" value1="$_dpOpFirst10"  value2="$_dpOpSecond10" />
+      </condition>
+      <perform>
+
+            
+      <assign var="_dpExit2"><atom var="none"/></assign>
+      <exit var="_dpExit2"/>
+
+
+      </perform>
+
+      </if>
+    </else>
+
+</if>
+    
+  <assign var="givenEmployee"><atom var="shift" index="Employee"/></assign>
+  
+    <if>
+    <condition>
+      
+  <index_exists  var="shift" index="PayStaged" />
+    </condition>
+    <perform>
+
+    <db_fetch system="Timesheet" assign="arrTimesheets">
+      <db_condition>
+        <db_compare column="Employee"  function="eq"><atom var="givenEmployee" /></db_compare>
+        <db_compare column="Date"      function="eq"><atom var="currentShiftDate" /></db_compare>
+        <db_compare column="Discarded" function="ns">
+          <atom>0</atom>
+        </db_compare>
+      </db_condition>
+      <db_sort>
+        <db_sort_column order="asc">StartTime</db_sort_column>
+      </db_sort>
+   </db_fetch>
+
+    </perform>
+    <else>
+
+    <db_fetch system="Roster" assign="arrTimesheets">
+      <db_condition>
+        <db_compare column="Employee"  function="eq"><atom var="givenEmployee" /></db_compare>
+        <db_compare column="Date"      function="eq"><atom var="currentShiftDate" /></db_compare>
+      </db_condition>
+      <db_sort>
+        <db_sort_column order="asc">StartTime</db_sort_column>
+      </db_sort>
+   </db_fetch>
+    </else>
+</if>
+    
+  <assign var="firstSlotHours"><atom>0</atom></assign>
+    <assign var="_dpOpFirst11"></assign>
+  <assign var="_dpOpFirst12"><atom var="currentShiftDate"/></assign>
+    <assign var="_dpOpFirst13"> </assign>
+    <assign var="_dpOpSecond13"><atom var="strTime"/></assign>
+    <math  op="&amp;" arg1="$_dpOpFirst13" arg2="$_dpOpSecond13"  assign="_dpOpSecond12"/>
+    <math  op="&amp;" arg1="$_dpOpFirst12" arg2="$_dpOpSecond12"  assign="_dpOpSecond11"/>
+<math  op="&amp;" arg1="$_dpOpFirst11" arg2="$_dpOpSecond11"  assign="_dpParam7"/>
+  <dateprint  format="U" input="$_dpParam7"  assign="intTimeStamp"/>
+    
+  <dateprint  format="D d,M,y H:i:s" input="$intTimeStamp"  assign="confirmTime"/>
+    <assign var="_dpOpFirst14">intTimeStamp = </assign>
+  <assign var="_dpOpFirst15"><atom var="confirmTime"/></assign>
+    <assign var="_dpOpSecond15"> </assign>
+    <math  op="&amp;" arg1="$_dpOpFirst15" arg2="$_dpOpSecond15"  assign="_dpOpSecond14"/>
+<math  op="&amp;" arg1="$_dpOpFirst14" arg2="$_dpOpSecond14"  assign="_dpParam8"/>
+  <log  message="$_dpParam8" />
+  <loop var="arrTimesheets">
+  <perform>
+  <assign var="objTS"><atom var="this"/></assign>
+      <assign var="_dpOpFirst16"><atom var="objTS" index="EndTime"/></assign>
+      <assign var="_dpOpSecond16"><atom var="intTimeStamp"/></assign>
+      <if>
+      <condition>
+      <compare  function="le" value1="$_dpOpFirst16"  value2="$_dpOpSecond16" />
+      </condition>
+      <perform>
+
+            <assign var="_dpOpFirst17"><atom var="firstSlotHours"/></assign>
+      <assign var="_dpOpSecond17"><atom var="objTS" index="TotalTime"/></assign>
+      <math  op="+" arg1="$_dpOpFirst17" arg2="$_dpOpSecond17"  assign="firstSlotHours"/>
+            <assign var="_dpOpFirst18">Finished before </assign>
+      <assign var="_dpOpFirst19"><atom var="strTime"/></assign>
+        <assign var="_dpOpFirst20"> so doesn't matter = </assign>
+        <assign var="_dpOpFirst21"><atom var="objTS" index="EndTime"/></assign>
+        <assign var="_dpOpSecond21"> </assign>
+        <math  op="&amp;" arg1="$_dpOpFirst21" arg2="$_dpOpSecond21"  assign="_dpOpSecond20"/>
+        <math  op="&amp;" arg1="$_dpOpFirst20" arg2="$_dpOpSecond20"  assign="_dpOpSecond19"/>
+        <math  op="&amp;" arg1="$_dpOpFirst19" arg2="$_dpOpSecond19"  assign="_dpOpSecond18"/>
+<math  op="&amp;" arg1="$_dpOpFirst18" arg2="$_dpOpSecond18"  assign="_dpParam9"/>
+      <log  message="$_dpParam9" />
+      <continue/>
+
+      </perform>
+
+      </if>
+    <assign var="_dpOpFirst22"><atom var="objTS" index="StartTime"/></assign>
+      <assign var="_dpOpSecond22"><atom var="intTimeStamp"/></assign>
+      <if>
+      <condition>
+      <compare  function="gt" value1="$_dpOpFirst22"  value2="$_dpOpSecond22" />
+      </condition>
+      <perform>
+
+      <break/>
+
+      </perform>
+
+      </if>
+    <assign var="_dpOpFirst23"><atom var="objTS" index="EndTime"/></assign>
+      <assign var="_dpOpSecond23"><atom var="intTimeStamp"/></assign>
+      <if>
+      <condition>
+      <compare  function="gt" value1="$_dpOpFirst23"  value2="$_dpOpSecond23" />
+      </condition>
+      <perform>
+
+            <assign var="_dpOpFirst24"><atom var="intTimeStamp"/></assign>
+      <assign var="_dpOpSecond24"><atom var="objTS" index="StartTime"/></assign>
+      <math  op="-" arg1="$_dpOpFirst24" arg2="$_dpOpSecond24"  assign="seconds"/>
+            <assign var="_dpOpFirst25"><atom var="seconds"/></assign>
+      <assign var="_dpOpSecond25"><atom>3600</atom></assign>
+      <math  op="/" arg1="$_dpOpFirst25" arg2="$_dpOpSecond25"  assign="hours"/>
+            
+      <math  arg1="$hours" op="round" arg2="2"  assign="hours"/>
+            <assign var="_dpOpFirst26">Finished After </assign>
+      <assign var="_dpOpFirst27"><atom var="strTime"/></assign>
+        <assign var="_dpOpFirst28"> so doesn't hours = </assign>
+        <assign var="_dpOpFirst29"><atom var="hours"/></assign>
+        <assign var="_dpOpFirst30"> seconds = </assign>
+        <assign var="_dpOpFirst31"><atom var="seconds"/></assign>
+        <assign var="_dpOpSecond31"> </assign>
+        <math  op="&amp;" arg1="$_dpOpFirst31" arg2="$_dpOpSecond31"  assign="_dpOpSecond30"/>
+        <math  op="&amp;" arg1="$_dpOpFirst30" arg2="$_dpOpSecond30"  assign="_dpOpSecond29"/>
+        <math  op="&amp;" arg1="$_dpOpFirst29" arg2="$_dpOpSecond29"  assign="_dpOpSecond28"/>
+        <math  op="&amp;" arg1="$_dpOpFirst28" arg2="$_dpOpSecond28"  assign="_dpOpSecond27"/>
+        <math  op="&amp;" arg1="$_dpOpFirst27" arg2="$_dpOpSecond27"  assign="_dpOpSecond26"/>
+<math  op="&amp;" arg1="$_dpOpFirst26" arg2="$_dpOpSecond26"  assign="_dpParam10"/>
+      <log  message="$_dpParam10" />
+            <assign var="_dpParam11"><atom var="objTS" index="Mealbreak"/></assign>
+      <dateprint  format="G" input="$_dpParam11"  assign="_dpOpFirst33"/>
+      <assign var="_dpOpSecond33"><atom>3600</atom></assign>
+      <math  op="*" arg1="$_dpOpFirst33" arg2="$_dpOpSecond33"  assign="_dpOpFirst32"/>
+      <assign var="_dpParam12"><atom var="objTS" index="Mealbreak"/></assign>
+      <dateprint  format="i" input="$_dpParam12"  assign="_dpOpFirst34"/>
+      <assign var="_dpOpSecond34"><atom>60</atom></assign>
+      <math  op="*" arg1="$_dpOpFirst34" arg2="$_dpOpSecond34"  assign="_dpOpSecond32"/>
+      <math  op="+" arg1="$_dpOpFirst32" arg2="$_dpOpSecond32"  assign="mb"/>
+            <assign var="_dpOpFirst35"><atom var="mb"/></assign>
+      <assign var="_dpOpSecond35"><atom>3600</atom></assign>
+<math  op="/" arg1="$_dpOpFirst35" arg2="$_dpOpSecond35"  assign="_dpParam13"/>
+      <math  arg1="$_dpParam13" op="round" arg2="2"  assign="mbhours"/>
+      <assign var="_dpOpFirst36"><atom var="mb"/></assign>
+        <assign var="_dpOpSecond36"><atom>0</atom></assign>
+        <if>
+        <condition>
+        <compare  function="gt" value1="$_dpOpFirst36"  value2="$_dpOpSecond36" />
+        </condition>
+        <perform>
+
+                <assign var="_dpOpFirst37"><atom var="objTS" index="StartTime"/></assign>
+        <assign var="_dpOpFirst39"><atom var="objTS" index="EndTime"/></assign>
+        <assign var="_dpOpSecond39"><atom var="objTS" index="StartTime"/></assign>
+        <math  op="-" arg1="$_dpOpFirst39" arg2="$_dpOpSecond39"  assign="_dpOpFirst38"/>
+        <assign var="_dpOpSecond38"><atom>2</atom></assign>
+        <math  op="/" arg1="$_dpOpFirst38" arg2="$_dpOpSecond38"  assign="_dpOpSecond37"/>
+        <math  op="+" arg1="$_dpOpFirst37" arg2="$_dpOpSecond37"  assign="halfway"/>
+                <assign var="_dpOpFirst40"><atom var="halfway"/></assign>
+        <assign var="_dpOpFirst41"><atom var="mb"/></assign>
+        <assign var="_dpOpSecond41"><atom>2</atom></assign>
+        <math  op="/" arg1="$_dpOpFirst41" arg2="$_dpOpSecond41"  assign="_dpOpSecond40"/>
+        <math  op="+" arg1="$_dpOpFirst40" arg2="$_dpOpSecond40"  assign="breakfinished"/>
+                <assign var="_dpOpFirst42"><atom var="halfway"/></assign>
+        <assign var="_dpOpFirst43"><atom var="mb"/></assign>
+        <assign var="_dpOpSecond43"><atom>2</atom></assign>
+        <math  op="/" arg1="$_dpOpFirst43" arg2="$_dpOpSecond43"  assign="_dpOpSecond42"/>
+        <math  op="-" arg1="$_dpOpFirst42" arg2="$_dpOpSecond42"  assign="breakstarted"/>
+                
+        <dateprint  format="D d,M,y H:i:s" input="$breakstarted"  assign="confirmTime"/>
+                <assign var="_dpOpFirst44">breakstarted = </assign>
+        <assign var="_dpOpFirst45"><atom var="confirmTime"/></assign>
+          <assign var="_dpOpSecond45"> </assign>
+          <math  op="&amp;" arg1="$_dpOpFirst45" arg2="$_dpOpSecond45"  assign="_dpOpSecond44"/>
+<math  op="&amp;" arg1="$_dpOpFirst44" arg2="$_dpOpSecond44"  assign="_dpParam14"/>
+        <log  message="$_dpParam14" />
+                
+        <dateprint  format="D d,M,y H:i:s" input="$breakfinished"  assign="confirmTime"/>
+                <assign var="_dpOpFirst46">breakfinished = </assign>
+        <assign var="_dpOpFirst47"><atom var="confirmTime"/></assign>
+          <assign var="_dpOpSecond47"> </assign>
+          <math  op="&amp;" arg1="$_dpOpFirst47" arg2="$_dpOpSecond47"  assign="_dpOpSecond46"/>
+<math  op="&amp;" arg1="$_dpOpFirst46" arg2="$_dpOpSecond46"  assign="_dpParam15"/>
+        <log  message="$_dpParam15" />
+        <assign var="_dpOpFirst48"><atom var="breakfinished"/></assign>
+          <assign var="_dpOpSecond48"><atom var="intTimeStamp"/></assign>
+          <if>
+          <condition>
+          <compare  function="lt" value1="$_dpOpFirst48"  value2="$_dpOpSecond48" />
+          </condition>
+          <perform>
+
+                    <assign var="_dpOpFirst49"><atom var="hours"/></assign>
+          <assign var="_dpOpSecond49"><atom var="mbhours"/></assign>
+          <math  op="-" arg1="$_dpOpFirst49" arg2="$_dpOpSecond49"  assign="hours"/>
+                    <assign var="_dpOpFirst50">Break finished before hours = </assign>
+          <assign var="_dpOpFirst51"><atom var="hours"/></assign>
+            <assign var="_dpOpFirst52"> mbhours = </assign>
+            <assign var="_dpOpSecond52"><atom var="mbhours"/></assign>
+            <math  op="&amp;" arg1="$_dpOpFirst52" arg2="$_dpOpSecond52"  assign="_dpOpSecond51"/>
+            <math  op="&amp;" arg1="$_dpOpFirst51" arg2="$_dpOpSecond51"  assign="_dpOpSecond50"/>
+<math  op="&amp;" arg1="$_dpOpFirst50" arg2="$_dpOpSecond50"  assign="_dpParam16"/>
+          <log  message="$_dpParam16" />
+
+          </perform>
+          <else>
+<assign var="_dpOpFirst53"><atom var="breakstarted"/></assign>
+            <assign var="_dpOpSecond53"><atom var="intTimeStamp"/></assign>
+            <if>
+            <condition>
+            <compare  function="le" value1="$_dpOpFirst53"  value2="$_dpOpSecond53" />
+            </condition>
+            <perform>
+
+                        <assign var="_dpOpFirst54"><atom var="hours"/></assign>
+            <assign var="_dpOpFirst56"><atom var="intTimeStamp"/></assign>
+            <assign var="_dpOpSecond56"><atom var="breakstarted"/></assign>
+            <math  op="-" arg1="$_dpOpFirst56" arg2="$_dpOpSecond56"  assign="_dpOpFirst55"/>
+            <assign var="_dpOpSecond55"><atom>3600</atom></assign>
+            <math  op="/" arg1="$_dpOpFirst55" arg2="$_dpOpSecond55"  assign="_dpOpSecond54"/>
+            <math  op="-" arg1="$_dpOpFirst54" arg2="$_dpOpSecond54"  assign="hours"/>
+                        <assign var="_dpOpFirst57">Break was crossing over hours = </assign>
+            <assign var="_dpOpFirst58"><atom var="hours"/></assign>
+              <assign var="_dpOpFirst59">  mbhours = </assign>
+              <assign var="_dpOpSecond59"><atom var="mbhours"/></assign>
+              <math  op="&amp;" arg1="$_dpOpFirst59" arg2="$_dpOpSecond59"  assign="_dpOpSecond58"/>
+              <math  op="&amp;" arg1="$_dpOpFirst58" arg2="$_dpOpSecond58"  assign="_dpOpSecond57"/>
+<math  op="&amp;" arg1="$_dpOpFirst57" arg2="$_dpOpSecond57"  assign="_dpParam17"/>
+            <log  message="$_dpParam17" />
+
+            </perform>
+
+            </if>
+          </else>
+
+</if>
+
+        </perform>
+
+        </if>
+            <assign var="_dpOpFirst60"><atom var="firstSlotHours"/></assign>
+      <assign var="_dpOpSecond60"><atom var="hours"/></assign>
+      <math  op="+" arg1="$_dpOpFirst60" arg2="$_dpOpSecond60"  assign="firstSlotHours"/>
+      <break/>
+
+      </perform>
+
+      </if>
+  </perform>
+  </loop>
+    <assign var="_dpOpFirst61"><atom var="firstSlotHours"/></assign>
+  <assign var="_dpOpSecond61"><atom var="intHours"/></assign>
+<assign var="_dpObj27" index="slot1"><atom var="firstSlotHours"/></assign>
+<assign var="_dpObj27" index="slot2"><math  op="+" arg1="$_dpOpFirst61" arg2="$_dpOpSecond61" /></assign>
+  <assign var="slot"><atom var="_dpObj27"/></assign>
+    
+  <assign var="sParam"></assign>
+    
+  <string  input="$strDay" function="ucfirst"  assign="strDay"/>
+  <assign var="_dpOpFirst62"><atom var="strDay"/></assign>
+    <assign var="_dpOpSecond62">Ph</assign>
+    <if>
+    <condition>
+    <compare  function="eq" value1="$_dpOpFirst62"  value2="$_dpOpSecond62" />
+    </condition>
+    <perform>
+
+        
+    <assign var="strDay">PH</assign>
+
+    </perform>
+
+    </if>
+    
+  <assign var="sParam" index="$strDay" ><atom var="slot"/></assign>
+    
+  <json_encode  input="$sParam"  assign="sjParam"/>
+    
+  <assign var="existing_param"><atom var="payrule" index="DexmlScriptParam"/></assign>
+    
+  <assign var="payrule" index="DexmlScriptParam" ><atom var="sjParam"/></assign>
+    <assign var="_dpOpFirst63">Existing param = </assign>
+  <assign var="_dpOpFirst64"><atom var="existing_param"/></assign>
+    <assign var="_dpOpSecond64"> , sParam = </assign>
+    <math  op="&amp;" arg1="$_dpOpFirst64" arg2="$_dpOpSecond64"  assign="_dpOpSecond63"/>
+<math  op="&amp;" arg1="$_dpOpFirst63" arg2="$_dpOpSecond63"  assign="_dpParam18"/>
+  <log  message="$_dpParam18" obj="$sParam" />
+  <assign var="_dpOpFirst65"><atom var="strWhichSlot"/></assign>
+    <assign var="_dpOpSecond65">third</assign>
+    <if>
+    <condition>
+    <compare  function="eq" value1="$_dpOpFirst65"  value2="$_dpOpSecond65" />
+    </condition>
+    <perform>
+
+        
+    <log  message="Calling third slot " />
+    <assign var="ret"><runscript id="deputec_sr_slot3_third_z" shift="$shift" payrule="$payrule" starttime="$starttime" endtime="$endtime"/></assign>
+
+    </perform>
+    <else>
+<assign var="_dpOpFirst66"><atom var="strWhichSlot"/></assign>
+      <assign var="_dpOpSecond66">second</assign>
+      <if>
+      <condition>
+      <compare  function="eq" value1="$_dpOpFirst66"  value2="$_dpOpSecond66" />
+      </condition>
+      <perform>
+
+            
+      <log  message="Calling second slot " />
+      <assign var="ret"><runscript id="deputec_sr_slot2_second_y" shift="$shift" payrule="$payrule" starttime="$starttime" endtime="$endtime"/></assign>
+
+      </perform>
+      <else>
+
+            
+      <log  message="Calling first slot " />
+      <assign var="ret"><runscript id="deputec_sr_slot1_first_x" shift="$shift" payrule="$payrule" starttime="$starttime" endtime="$endtime"/></assign>
+      </else>
+</if>
+    </else>
+
+</if>
+    
+  <assign var="_dpExit3"><atom var="ret"/></assign>
+  <exit var="_dpExit3"/>
+
+
+</script>
